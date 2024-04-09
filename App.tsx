@@ -2,12 +2,14 @@ import React from 'react';
 import {SafeAreaView, StatusBar, StyleSheet} from 'react-native';
 
 import Home from './src/modules/Home';
+import LayoutAnimationDemo from './src/modules/LayoutAnimationDemo';
 
 function App(): React.JSX.Element {
   return (
     <SafeAreaView style={styles.root}>
       <StatusBar barStyle={'dark-content'} backgroundColor={'white'} />
       <Home />
+      {/* <LayoutAnimationDemo /> */}
     </SafeAreaView>
   );
 }

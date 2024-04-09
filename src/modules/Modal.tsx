@@ -223,8 +223,6 @@ export default ({
   };
 
   const handleSaveBtn = () => {
-    setAccountInfo(initState);
-    setAccountType('game');
     saveData(accountType, accountInfo);
   };
   return (

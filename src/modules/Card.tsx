@@ -9,86 +9,18 @@ import {
   LayoutAnimation,
   Alert,
 } from 'react-native';
+import {produce} from 'immer';
 
 import Modal from './Modal';
-
-import gameIcon from '../assets/icon_game.png';
-import platformIcon from '../assets/icon_platform.png';
-import bankIcon from '../assets/icon_bank.png';
-import otherIcon from '../assets/icon_other.png';
 import arrowIcon from '../assets/icon_arrow.png';
 import addIcon from '../assets/icon_add.png';
-import {produce} from 'immer';
+import {load, save} from '../utils/Storage';
+
 const initState = {
   name: '',
   username: '',
   password: '',
 };
-
-const DATA = [
-  {
-    title: '游戏',
-    index: 0,
-    type: 'game',
-    data: [
-      {
-        name: 'QQSpped',
-        username: 'qsq12345',
-        password: '12345699',
-      },
-      {
-        name: '王者荣耀',
-        username: 'qsq1234',
-        password: '0000123456000',
-      },
-      {
-        name: '绝地求生',
-        username: 'qsq1234569',
-        password: '000012345600',
-      },
-    ],
-    icon: gameIcon,
-  },
-  {
-    title: '平台',
-    type: 'platform',
-    index: 1,
-    data: [
-      {
-        name: 'QQSpped',
-        username: 'qsq123456',
-        password: '123456',
-      },
-    ],
-    icon: platformIcon,
-  },
-  {
-    title: '银行卡',
-    type: ' bank',
-    index: 2,
-    data: [
-      {
-        name: '招商银行',
-        username: 'qsq123456',
-        password: '123456',
-      },
-    ],
-    icon: bankIcon,
-  },
-  {
-    title: '其他',
-    type: ' other',
-    index: 3,
-    data: [
-      {
-        name: '其他',
-        username: 'qsq123456',
-        password: '123456',
-      },
-    ],
-    icon: otherIcon,
-  },
-];
 
 export default ({showPassword}: {showPassword: boolean}) => {
   const [arrowState, setArrowState] = useState(new Array(4).fill(false));
@@ -102,8 +34,15 @@ export default ({showPassword}: {showPassword: boolean}) => {
 
   const [data, setData] = useState([]);
 
+  const loadData = () => {
+    load('sectionData').then(value => {
+      LayoutAnimation.easeInEaseOut();
+      setData(value);
+    });
+  };
+
   useEffect(() => {
-    setData(DATA);
+    loadData();
   }, []);
 
   const handleArrow = useCallback(
@@ -127,36 +66,45 @@ export default ({showPassword}: {showPassword: boolean}) => {
 
   const saveData = useCallback(
     (type: string, itemData: any) => {
-      const nextState = produce(data, draft => {
-        const {idx, edit} = modalInfo;
-
-        if (edit) {
-          draft.find(item => item.type === type)?.data.splice(idx, 1, itemData);
-        } else {
-          draft.find(item => item.type === type)?.data.push(itemData);
-        }
-      });
-      setData(nextState);
       LayoutAnimation.easeInEaseOut();
-      hideModal();
+      load('sectionData').then(value => {
+        const nextState = produce(value, draft => {
+          const {idx, edit} = modalInfo;
+
+          if (edit) {
+            draft
+              .find(item => item.type === type)
+              ?.data.splice(idx, 1, itemData);
+          } else {
+            draft.find(item => item.type === type)?.data.push(itemData);
+          }
+        });
+        save(nextState).then(() => {
+          hideModal();
+          loadData();
+        });
+      });
     },
-    [data, hideModal, modalInfo],
+    [hideModal, modalInfo],
   );
 
   const handleEdit = (item: any, type: string, idx: number) => {
-    console.log('idx: ', idx);
     setShowModal(true);
     setModalInfo({accountInfo: item, type, edit: true, idx});
   };
 
   const deleteAccount = (type: string, index: number) => {
-    const nextState = produce(data, draft => {
-      const list = draft.find(
-        (item: {type: string}) => item.type === type,
-      )?.data;
-      list.splice(index, 1);
+    load('sectionData').then(value => {
+      const nextState = produce(value, draft => {
+        const list = draft.find(
+          (item: {type: string}) => item.type === type,
+        )?.data;
+        list.splice(index, 1);
+      });
+      save(nextState).then(() => {
+        loadData();
+      });
     });
-    setData(nextState);
   };
 
   const renderItem = ({item, section, index}) => {
